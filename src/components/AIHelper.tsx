@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { BannerConfig, AISuggestions } from "../types";
-import { Sparkles, ArrowRight, Loader2, RefreshCw, Check, Code, Layers, FileText } from "lucide-react";
+import { PERSONAS, PERSONA_MAP, DEFAULT_PERSONA_ID } from "../lib/personas";
+import { Sparkles, ArrowRight, Loader2, RefreshCw, Check, Code, Layers, FileText, Users } from "lucide-react";
 
 interface AIHelperProps {
   config: BannerConfig;
@@ -8,13 +9,24 @@ interface AIHelperProps {
 }
 
 export default function AIHelper({ config, onChangeConfig }: AIHelperProps) {
-  const [bioText, setBioText] = useState(
-    "7+ years as a Senior Backend Engineer / Backend Lead; Sole owner of a multi-tenant SaaS platform serving 100+ organizations. Integrated Gemini 2.5 Flash into live hiring workflows (resume parsing, scoring, chat). Certified Google Cloud and IBM in Generative AI and Cloud Computing."
-  );
+  const [personaId, setPersonaId] = useState(DEFAULT_PERSONA_ID);
+  const persona = PERSONA_MAP[personaId];
+
+  const [bioText, setBioText] = useState(persona.bioExample);
   const [titleInput, setTitleInput] = useState(config.title);
   const [taglineInput, setTaglineInput] = useState(config.tagline);
-  const [styleMode, setStyleMode] = useState("Architectural & Scale-focused");
-  
+  const [styleMode, setStyleMode] = useState(persona.archetypes[0]);
+
+  const handlePersonaChange = (nextId: string) => {
+    const nextPersona = PERSONA_MAP[nextId];
+    // Only swap the example bio if the user hasn't typed over it yet.
+    if (bioText === persona.bioExample) {
+      setBioText(nextPersona.bioExample);
+    }
+    setStyleMode(nextPersona.archetypes[0]);
+    setPersonaId(nextId);
+  };
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<AISuggestions | null>({
@@ -49,7 +61,8 @@ export default function AIHelper({ config, onChangeConfig }: AIHelperProps) {
           bioText,
           title: titleInput,
           currentTagline: taglineInput,
-          styleMode
+          styleMode,
+          persona: personaId
         }),
       });
 
@@ -97,7 +110,7 @@ export default function AIHelper({ config, onChangeConfig }: AIHelperProps) {
           </div>
           <div>
             <h3 className="font-bold text-white text-base">Gemini Personal Brand Writer</h3>
-            <p className="text-xs text-slate-400">Optimize banner copy for software engineers & architects</p>
+            <p className="text-xs text-slate-400">Optimize banner copy for {persona.focus}</p>
           </div>
         </div>
         <div className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#555] px-2 py-1 bg-[#050505]/50 border border-[#111] rounded">
@@ -107,6 +120,22 @@ export default function AIHelper({ config, onChangeConfig }: AIHelperProps) {
 
       {/* Inputs Form */}
       <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#888] mb-1.5 flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-[#555]" />
+            Profession
+          </label>
+          <select
+            value={personaId}
+            onChange={(e) => handlePersonaChange(e.target.value)}
+            className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] focus:ring-1 focus:ring-blue-500 transition-all outline-none cursor-pointer"
+          >
+            {PERSONAS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-[#888] mb-1.5 flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-[#555]" />
@@ -131,7 +160,7 @@ export default function AIHelper({ config, onChangeConfig }: AIHelperProps) {
               type="text"
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
-              placeholder="e.g. Senior Backend Architect"
+              placeholder={persona.titlePlaceholder}
               className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] focus:ring-1 focus:ring-blue-500 transition-all outline-none"
             />
           </div>
@@ -146,10 +175,9 @@ export default function AIHelper({ config, onChangeConfig }: AIHelperProps) {
               onChange={(e) => setStyleMode(e.target.value)}
               className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] focus:ring-1 focus:ring-blue-500 transition-all outline-none cursor-pointer"
             >
-              <option value="Architectural & Scale-focused">Architectural & Scale-focused</option>
-              <option value="Generative AI & LLM Pioneer">Generative AI & LLM Pioneer</option>
-              <option value="Sleek Minimalist Engineer">Sleek Minimalist Engineer</option>
-              <option value="Cloud Architecture Expert">Cloud Architecture Expert</option>
+              {persona.archetypes.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
             </select>
           </div>
         </div>

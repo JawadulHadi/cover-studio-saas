@@ -3,6 +3,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
+import { PERSONA_MAP, DEFAULT_PERSONA_ID } from "./src/lib/personas";
 
 dotenv.config();
 
@@ -24,28 +25,33 @@ const ai = new GoogleGenAI({
 // Server-side AI endpoint to generate LinkedIn taglines, bio expansions, and skill groupings
 app.post("/api/gemini/generate", async (req, res) => {
   try {
-    const { bioText, title, currentTagline, styleMode } = req.body;
+    const { bioText, title, currentTagline, styleMode, persona: personaId } = req.body;
 
     if (!bioText && !title && !currentTagline) {
       res.status(400).json({ error: "Missing required inputs for generation" });
       return;
     }
 
-    const systemInstruction = `You are an expert LinkedIn profile optimizer and personal branding designer for high-end software developers and tech executives. 
+    // Persona is looked up server-side from a fixed map — never interpolate
+    // client-supplied free text into the system instruction itself.
+    const persona = PERSONA_MAP[personaId] || PERSONA_MAP[DEFAULT_PERSONA_ID];
+
+    const systemInstruction = `You are an expert LinkedIn profile optimizer and personal branding designer for ${persona.focus}.
 Your goal is to analyze the user's professional background and generate high-impact, minimalist copy suitable for a LinkedIn cover banner.
-LinkedIn banners are wide and short (1584x396). Text must be extremely concise (typically a single powerful sentence/tagline and 4-6 primary technologies/badges).
-Avoid generic marketing buzzwords. Focus on architectural impact, scale, and shipped systems.`;
+LinkedIn banners are wide and short (1584x396). Text must be extremely concise (typically a single powerful sentence/tagline and 4-6 primary skills/badges).
+${persona.guidance}
+Avoid generic marketing buzzwords not specific to the field.`;
 
     const prompt = `Analyze the following professional context and generate copy suggestions:
 - Name/Target Title: ${title || "N/A"}
 - Current Tagline: ${currentTagline || "N/A"}
 - Raw Bio/Details: ${bioText || "N/A"}
-- Requested Tone: ${styleMode || "Architectural & Scale-focused"}
+- Requested Tone: ${styleMode || persona.archetypes[0]}
 
 Please provide:
-1. Three variations of an elegant, crisp, single-sentence tagline (under 100 characters each) that highlights concrete expertise (e.g. "I build backend systems that scale, AI features that ship...").
-2. A list of 6-8 core modern technologies or engineering specialties (like NestJS, Kubernetes, GCP, Gemini 2.5 Flash, PostgreSQL) that represent the user's focus.
-3. Two variations of secondary contact/social taglines (e.g. "Scalable Microservices | AI Integrations" or "Specializing in Web Apps & Cloud Solutions").`;
+1. Three variations of an elegant, crisp, single-sentence tagline (under 100 characters each) that highlights concrete, field-relevant expertise.
+2. A list of 6-8 core skills, tools, or specialties (${persona.skillsHint}) that represent the user's focus.
+3. Two variations of secondary contact/social taglines summarizing their specialty.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
