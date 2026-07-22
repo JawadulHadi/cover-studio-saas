@@ -1,0 +1,6 @@
+{
+  "name": "LinkedIn Cover Studio",
+  "description": "An interactive studio for designing, previewing, and downloading high-res professional LinkedIn cover banners with safe-zone guides and AI copywriting assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
