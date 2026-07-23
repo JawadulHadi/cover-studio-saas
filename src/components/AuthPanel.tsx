@@ -11,6 +11,7 @@ export default function AuthPanel() {
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,13 @@ export default function AuthPanel() {
 
     const { error: authError } =
       mode === "sign-up"
-        ? await supabase.auth.signUp({ email, password })
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            // Consent is stored in user metadata and copied into the leads
+            // table by a DB trigger (see supabase/migrations/0001_leads_marketing.sql).
+            options: { data: { marketing_consent: marketingConsent } },
+          })
         : await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
@@ -120,6 +127,20 @@ export default function AuthPanel() {
                 className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg pl-9 pr-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] focus:ring-1 focus:ring-blue-500 transition-all outline-none"
               />
             </div>
+
+            {mode === "sign-up" && (
+              <label className="flex items-start gap-2 cursor-pointer select-none pt-0.5">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="mt-0.5 accent-blue-500 cursor-pointer"
+                />
+                <span className="text-[10px] text-[#888] leading-snug">
+                  I'd like to receive occasional product updates and tips from Qeloma. You can unsubscribe anytime.
+                </span>
+              </label>
+            )}
 
             {error && <p className="text-[11px] text-red-400">{error}</p>}
             {message && <p className="text-[11px] text-emerald-400">{message}</p>}
