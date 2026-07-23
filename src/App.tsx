@@ -4,6 +4,7 @@ import BannerCanvas from "./components/BannerCanvas";
 import MockProfile from "./components/MockProfile";
 import EditorPanel from "./components/EditorPanel";
 import AIHelper from "./components/AIHelper";
+import AuthPanel from "./components/AuthPanel";
 import { 
   Download, Eye, EyeOff, Layout, Sparkles, Sliders, Check, 
   HelpCircle, RefreshCw, Briefcase, Award, Shield, CheckCircle2, Laptop 
@@ -135,6 +136,8 @@ export default function App() {
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>Scale Ingress: Port 3000 Active</span>
           </div>
+
+          <AuthPanel />
         </div>
       </header>
 
