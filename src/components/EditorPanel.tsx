@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { BannerConfig } from "../types";
-import { 
+import {
   User, Palette, BadgePlus, BarChart3, Plus, X, Laptop, Smartphone,
-  Info, Sparkles, Layout, Type as FontIcon, Grid, Mail, MapPin
+  Info, Sparkles, Layout, Type as FontIcon, Grid, Mail, MapPin,
+  Image as ImageIcon, Link as LinkIcon, UserCircle2, Sticker
 } from "lucide-react";
 
 interface EditorPanelProps {
@@ -11,7 +12,7 @@ interface EditorPanelProps {
 }
 
 export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps) {
-  const [activeTab, setActiveTab] = useState<"text" | "style" | "skills" | "highlights">("text");
+  const [activeTab, setActiveTab] = useState<"text" | "style" | "skills" | "highlights" | "images">("text");
   const [newSkill, setNewSkill] = useState("");
 
   const presets = [
@@ -140,13 +141,24 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
         <button
           onClick={() => setActiveTab("highlights")}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-            activeTab === "highlights" 
-              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md" 
+            activeTab === "highlights"
+              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md"
               : "text-[#666] hover:text-[#c5c5c5]"
           }`}
         >
           <BarChart3 className="w-3.5 h-3.5" />
           <span>Highlights</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("images")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            activeTab === "images"
+              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md"
+              : "text-[#666] hover:text-[#c5c5c5]"
+          }`}
+        >
+          <ImageIcon className="w-3.5 h-3.5" />
+          <span>Images</span>
         </button>
       </div>
 
@@ -469,6 +481,112 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: IMAGES / MEDIA (URL-based, no upload) */}
+        {activeTab === "images" && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+              <ImageIcon className="w-4 h-4" />
+              <span>Media by Image URL</span>
+            </div>
+
+            <p className="text-[11px] text-[#888] leading-relaxed bg-[#050505]/40 p-3 border border-[#111] rounded-lg flex gap-2">
+              <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+              <span>
+                Paste a direct, public image URL (ending in .jpg / .png / .webp). There's no file upload yet.
+                For the <strong>logo</strong> and <strong>background</strong> to appear in the downloaded PNG, the
+                image host must allow cross-origin use (CORS) — otherwise they show in the live preview but are
+                skipped from the export.
+              </span>
+            </p>
+
+            {/* Avatar URL */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1.5">
+                <UserCircle2 className="w-3.5 h-3.5 text-[#555]" />
+                Profile Avatar URL
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#050505] border border-[#1a1a1a] overflow-hidden shrink-0 flex items-center justify-center">
+                  {config.customAvatarUrl ? (
+                    <img src={config.customAvatarUrl} alt="Avatar preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <UserCircle2 className="w-6 h-6 text-[#333]" />
+                  )}
+                </div>
+                <input
+                  type="url"
+                  value={config.customAvatarUrl}
+                  onChange={(e) => onChangeConfig({ customAvatarUrl: e.target.value })}
+                  placeholder="https://…/headshot.jpg"
+                  className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] outline-none transition-all"
+                />
+              </div>
+              <p className="text-[10px] text-[#555] mt-1">Shown in the LinkedIn preview mockup below.</p>
+            </div>
+
+            {/* Logo URL */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1.5">
+                <Sticker className="w-3.5 h-3.5 text-[#555]" />
+                Logo URL
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-[#050505] border border-[#1a1a1a] overflow-hidden shrink-0 flex items-center justify-center p-1">
+                  {config.customLogoUrl ? (
+                    <img src={config.customLogoUrl} alt="Logo preview" className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
+                  ) : (
+                    <Sticker className="w-6 h-6 text-[#333]" />
+                  )}
+                </div>
+                <input
+                  type="url"
+                  value={config.customLogoUrl}
+                  onChange={(e) => onChangeConfig({ customLogoUrl: e.target.value })}
+                  placeholder="https://…/logo.png"
+                  className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] outline-none transition-all"
+                />
+              </div>
+              <p className="text-[10px] text-[#555] mt-1">Rendered in the banner's top-right corner.</p>
+            </div>
+
+            {/* Background image URL */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-[#555]" />
+                Background Image URL
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="w-20 h-12 rounded-lg bg-[#050505] border border-[#1a1a1a] overflow-hidden shrink-0 flex items-center justify-center">
+                  {config.customBgUrl ? (
+                    <img src={config.customBgUrl} alt="Background preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-[#333]" />
+                  )}
+                </div>
+                <input
+                  type="url"
+                  value={config.customBgUrl}
+                  onChange={(e) => onChangeConfig({ customBgUrl: e.target.value })}
+                  placeholder="https://…/background.jpg"
+                  className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] outline-none transition-all"
+                />
+              </div>
+              <p className="text-[10px] text-[#555] mt-1">
+                Fills the whole banner with a readability overlay. Clear the field to return to the theme background.
+              </p>
+              {config.customBgUrl && (
+                <button
+                  onClick={() => onChangeConfig({ customBgUrl: "" })}
+                  className="mt-2 text-[10px] font-bold text-red-400/80 hover:text-red-400 flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  Remove background image
+                </button>
+              )}
             </div>
           </div>
         )}

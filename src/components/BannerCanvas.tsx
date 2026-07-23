@@ -10,11 +10,47 @@ interface BannerCanvasProps {
 export default function BannerCanvas({ config, className = "", onExportRef }: BannerCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Cache of loaded <img> elements keyed by URL, plus a version counter that
+  // bumps when a new image finishes loading so the canvas re-draws.
+  const imageCacheRef = useRef<Record<string, HTMLImageElement | "error">>({});
+  const [imageVersion, setImageVersion] = React.useState(0);
+
   // High-res dimensions
   const WIDTH = 1584;
   const HEIGHT = 396;
 
-  const drawCanvas = (ctx: CanvasRenderingContext2D, isExporting: boolean) => {
+  const getLoadedImage = (url: string): HTMLImageElement | null => {
+    const cached = imageCacheRef.current[url];
+    return cached && cached !== "error" && cached.complete && cached.naturalWidth > 0
+      ? cached
+      : null;
+  };
+
+  // Draw an image with "cover" fit into a target box.
+  const drawImageCover = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number
+  ) => {
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const boxRatio = dw / dh;
+    let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+    if (imgRatio > boxRatio) {
+      // image wider than box — crop sides
+      sw = img.naturalHeight * boxRatio;
+      sx = (img.naturalWidth - sw) / 2;
+    } else {
+      // image taller than box — crop top/bottom
+      sh = img.naturalWidth / boxRatio;
+      sy = (img.naturalHeight - sh) / 2;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  };
+
+  const drawCanvas = (ctx: CanvasRenderingContext2D, isExporting: boolean, skipImages = false) => {
     // 1. Clear background
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
@@ -60,6 +96,17 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
     bgGrad.addColorStop(1, secondaryBg);
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    // 1b. Custom background image (cover-fit) + legibility overlay so text
+    // stays readable regardless of the image.
+    const bgImg = !skipImages && config.customBgUrl ? getLoadedImage(config.customBgUrl) : null;
+    if (bgImg) {
+      drawImageCover(ctx, bgImg, 0, 0, WIDTH, HEIGHT);
+      ctx.fillStyle = config.themeColor === "minimal-white"
+        ? "rgba(255, 255, 255, 0.55)"
+        : "rgba(5, 5, 5, 0.55)";
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    }
 
     // 2. Draw Decorative BG Patterns
     if (config.bgPattern === "grid" || config.bgPattern === "circuit") {
@@ -470,6 +517,21 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
       ctx.fillText(config.location, locStartX + 80, footerY);
     }
 
+    // G. Custom logo (top-right corner, above the highlights box)
+    const logoImg = !skipImages && config.customLogoUrl ? getLoadedImage(config.customLogoUrl) : null;
+    if (logoImg) {
+      const maxLogoW = 120;
+      const maxLogoH = 40;
+      const ratio = logoImg.naturalWidth / logoImg.naturalHeight;
+      let lw = maxLogoW;
+      let lh = lw / ratio;
+      if (lh > maxLogoH) {
+        lh = maxLogoH;
+        lw = lh * ratio;
+      }
+      ctx.drawImage(logoImg, WIDTH - lw - 24, 18, lw, lh);
+    }
+
     // 4. Draw Safe Zone overlay IF enabled AND NOT exporting!
     // This highlights the circular area covered by LinkedIn profile picture.
     // It's exceptionally useful so they don't overlay texts here.
@@ -524,14 +586,50 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
       // Draw without safe-zones
       drawCanvas(exportCtx, true);
 
-      // Create download link
-      const imageURL = exportCanvas.toDataURL("image/png");
+      let imageURL: string;
+      try {
+        imageURL = exportCanvas.toDataURL("image/png");
+      } catch (err) {
+        // A cross-origin image without CORS headers taints the canvas and
+        // blocks export. Re-draw without custom images so the user still
+        // gets a PNG, and warn.
+        console.warn(
+          "A custom image could not be included in the export due to cross-origin restrictions. " +
+          "Use an image URL that allows CORS (or host it yourself).",
+          err
+        );
+        exportCtx.clearRect(0, 0, WIDTH, HEIGHT);
+        drawCanvas(exportCtx, true, true);
+        imageURL = exportCanvas.toDataURL("image/png");
+      }
+
       const link = document.createElement("a");
-      link.download = `linkedin_cover_${config.name.toLowerCase().replace(/\s+/g, "_")}.png`;
+      link.download = `qeloma_cover_${config.name.toLowerCase().replace(/\s+/g, "_")}.png`;
       link.href = imageURL;
       link.click();
     }
   };
+
+  // Load custom images (background + logo) as they change; bump a version
+  // counter on load so the canvas re-draws. crossOrigin lets CORS-enabled
+  // hosts stay untainted for export.
+  useEffect(() => {
+    const urls = [config.customBgUrl, config.customLogoUrl].filter(Boolean) as string[];
+    urls.forEach((url) => {
+      if (imageCacheRef.current[url]) return; // already loaded or errored
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        imageCacheRef.current[url] = img;
+        setImageVersion((v) => v + 1);
+      };
+      img.onerror = () => {
+        imageCacheRef.current[url] = "error";
+        setImageVersion((v) => v + 1);
+      };
+      img.src = url;
+    });
+  }, [config.customBgUrl, config.customLogoUrl]);
 
   useEffect(() => {
     if (onExportRef) {
@@ -547,7 +645,7 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
 
     // Draw the active state
     drawCanvas(ctx, false);
-  }, [config]);
+  }, [config, imageVersion]);
 
   return (
     <div className={`relative ${className}`} id="canvas-container">
