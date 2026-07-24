@@ -1,0 +1,431 @@
+<title>Qeloma Cover Studio — AI LinkedIn Banner Designer</title>
+<style>
+  :root {
+    /* cool-biased neutrals + two role accents (light theme default) */
+    --bg: #EAEDF2;
+    --surface: #FFFFFF;
+    --surface-2: #F4F6FA;
+    --ink: #12141B;
+    --muted: #565C69;
+    --faint: #858B98;
+    --line: #D6DAE3;
+    --brand: #2B44E6;   /* system / interactive */
+    --brand-ink: #FFFFFF;
+    --mark: #E4562A;    /* warm highlighter */
+    --mark-soft: #FFE7DE;
+    --shadow: 0 1px 2px rgba(18,20,27,.06), 0 12px 40px -12px rgba(18,20,27,.18);
+    --radius: 14px;
+    --maxw: 1140px;
+
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0A0B0F;
+      --surface: #121420;
+      --surface-2: #171A28;
+      --ink: #ECEEF4;
+      --muted: #9BA1AF;
+      --faint: #6C7280;
+      --line: #262A38;
+      --brand: #6E83FF;
+      --brand-ink: #0A0B0F;
+      --mark: #FF7A4D;
+      --mark-soft: #35241C;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 24px 60px -20px rgba(0,0,0,.7);
+    }
+  }
+  /* explicit viewer toggle overrides (must win both directions) */
+  :root[data-theme="light"] {
+    --bg: #EAEDF2; --surface: #FFFFFF; --surface-2: #F4F6FA; --ink: #12141B;
+    --muted: #565C69; --faint: #858B98; --line: #D6DAE3; --brand: #2B44E6;
+    --brand-ink: #FFFFFF; --mark: #E4562A; --mark-soft: #FFE7DE;
+    --shadow: 0 1px 2px rgba(18,20,27,.06), 0 12px 40px -12px rgba(18,20,27,.18);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0A0B0F; --surface: #121420; --surface-2: #171A28; --ink: #ECEEF4;
+    --muted: #9BA1AF; --faint: #6C7280; --line: #262A38; --brand: #6E83FF;
+    --brand-ink: #0A0B0F; --mark: #FF7A4D; --mark-soft: #35241C;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 24px 60px -20px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .wrap { max-width: var(--maxw); margin-inline: auto; padding-inline: 24px; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  a { color: inherit; }
+  .mark { color: var(--mark); }
+
+  /* ---------- top bar ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: saturate(1.4) blur(10px);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; gap: 24px; height: 62px; }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 800; letter-spacing: -.02em; font-size: 17px;
+  }
+  .glyph {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, var(--mark)));
+    position: relative; flex: none;
+  }
+  .glyph::after {
+    content: ""; position: absolute; inset: 7px 5px; border-radius: 2px;
+    background: var(--brand-ink); opacity: .9;
+  }
+  .nav .spacer { flex: 1; }
+  .nav a.link { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 550; }
+  .nav a.link:hover { color: var(--ink); }
+  @media (max-width: 720px){ .nav a.link { display: none; } }
+
+  .btn {
+    --pv: 10px; --ph: 16px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: var(--pv) var(--ph);
+    border-radius: 10px; font-weight: 680; font-size: 14px;
+    text-decoration: none; cursor: pointer; border: 1px solid transparent;
+    transition: transform .12s ease, background .2s ease, border-color .2s ease;
+  }
+  .btn-primary { background: var(--brand); color: var(--brand-ink); }
+  .btn-primary:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--brand) 88%, black); }
+  .btn-ghost { border-color: var(--line); color: var(--ink); background: var(--surface); }
+  .btn-ghost:hover { border-color: var(--muted); }
+  .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 74px 0 40px; }
+  .hero-grid { display: grid; gap: 26px; }
+  h1 {
+    font-size: clamp(34px, 6vw, 62px);
+    line-height: 1.02; letter-spacing: -.035em; font-weight: 820;
+    margin: 14px 0 0; text-wrap: balance; max-width: 15ch;
+  }
+  .lede {
+    font-size: clamp(16px, 2.1vw, 19px); color: var(--muted);
+    max-width: 52ch; margin: 20px 0 0;
+  }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; align-items: center; }
+  .cta-note { font-family: var(--font-mono); font-size: 12px; color: var(--faint); }
+
+  /* the "proof" — a real 4:1 sample banner, framed like a print proof */
+  .proof {
+    margin-top: 44px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .proof-cap {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 2px 6px 12px; gap: 12px;
+  }
+  .proof-cap .dims { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .1em; color: var(--faint); text-transform: uppercase; }
+  .proof-cap .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); opacity: .5; }
+  .dots { display: flex; gap: 6px; }
+
+  /* the sample cover is a product screenshot — stays dark in both themes */
+  .cover {
+    position: relative; aspect-ratio: 4 / 1; border-radius: 10px; overflow: hidden;
+    background:
+      radial-gradient(120% 180% at 88% 12%, rgba(110,131,255,.20), transparent 42%),
+      linear-gradient(120deg, #06070C 0%, #0E1220 100%);
+    color: #EAF0FF;
+    border: 1px solid #1b2136;
+  }
+  .cover-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 44px 44px; opacity: .5;
+  }
+  .cover-inner {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    padding: clamp(10px, 3.4%, 34px) clamp(14px, 4%, 40px);
+    gap: 4%;
+  }
+  .cover-avatar {
+    position: absolute; left: clamp(10px, 3%, 34px); bottom: -18%;
+    width: clamp(52px, 12%, 128px); aspect-ratio: 1; border-radius: 50%;
+    border: 3px dashed rgba(255,90,60,.7); background: rgba(255,90,60,.10);
+  }
+  .cover-main { padding-left: clamp(56px, 15%, 150px); min-width: 0; }
+  .cover-name { font-size: clamp(15px, 3.1vw, 34px); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; }
+  .cover-title { font-size: clamp(9px, 1.5vw, 15px); color: #97b0ff; margin-top: 2px; font-weight: 600; }
+  .cover-tag {
+    font-size: clamp(8px, 1.35vw, 14px); font-style: italic; color: #c7d3f2;
+    margin-top: clamp(4px,1.4%,12px); padding-left: 10px;
+    border-left: 3px solid #6E83FF; max-width: 46ch;
+  }
+  .cover-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: clamp(5px,1.6%,14px); }
+  .pill {
+    font-size: clamp(6.5px, 1vw, 11px); font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    color: #9db2ff; background: rgba(110,131,255,.10); border: 1px solid rgba(110,131,255,.28);
+  }
+  .cover-bento {
+    align-self: stretch; display: none; flex-direction: column; justify-content: center; gap: 8%;
+    width: clamp(120px, 26%, 300px); padding: 4% 5%;
+    border-left: 1px solid rgba(255,255,255,.06);
+  }
+  @media (min-width: 620px){ .cover-bento { display: flex; } }
+  .bento-cell .k { font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #8a93ab; }
+  .bento-cell .v { font-size: clamp(11px, 1.6vw, 18px); font-weight: 800; color: #fff; }
+
+  /* ---------- logos / trust strip ---------- */
+  .strip { border-block: 1px solid var(--line); margin-top: 56px; }
+  .strip .wrap { display: flex; flex-wrap: wrap; gap: 10px 30px; align-items: center; padding-block: 18px; }
+  .strip .lbl { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .roles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .role-chip { font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px; background: var(--surface); }
+
+  /* ---------- sections ---------- */
+  section.block { padding: 74px 0; }
+  .sec-head { max-width: 60ch; }
+  .sec-head h2 { font-size: clamp(26px, 4vw, 40px); letter-spacing: -.03em; line-height: 1.08; margin: 10px 0 0; text-wrap: balance; font-weight: 780; }
+  .sec-head p { color: var(--muted); font-size: 17px; margin: 14px 0 0; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+  @media (max-width: 900px){ .features { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px){ .features { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 22px; display: flex; flex-direction: column; gap: 10px; min-height: 172px;
+    transition: transform .14s ease, border-color .2s ease;
+  }
+  .card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
+  .card .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--mark); }
+  .card h3 { margin: 2px 0 0; font-size: 18px; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  /* a mini banner-ratio motif on each card */
+  .card .mini { margin-top: auto; height: 26px; border-radius: 6px; border: 1px solid var(--line); background:
+      repeating-linear-gradient(90deg, transparent 0 10px, color-mix(in srgb, var(--brand) 12%, transparent) 10px 11px); }
+
+  /* how it works — a real sequence */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; counter-reset: step; }
+  @media (max-width: 760px){ .steps { grid-template-columns: 1fr; } }
+  .step { border-top: 2px solid var(--ink); padding-top: 16px; }
+  .step .n { font-family: var(--font-mono); font-size: 13px; color: var(--brand); font-weight: 700; }
+  .step h3 { margin: 8px 0 6px; font-size: 19px; letter-spacing: -.01em; }
+  .step p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  /* CTA band */
+  .cta-band {
+    margin: 20px 0 80px;
+    background:
+      radial-gradient(120% 140% at 82% 10%, color-mix(in srgb, var(--brand) 24%, transparent), transparent 46%),
+      var(--surface);
+    border: 1px solid var(--line); border-radius: 22px;
+    padding: clamp(30px, 6vw, 60px);
+    box-shadow: var(--shadow);
+  }
+  .cta-band h2 { font-size: clamp(24px, 4vw, 38px); letter-spacing: -.03em; margin: 8px 0 0; text-wrap: balance; max-width: 20ch; }
+  .cta-band p { color: var(--muted); margin: 14px 0 0; max-width: 48ch; }
+
+  footer { border-top: 1px solid var(--line); }
+  .foot { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding-block: 26px; }
+  .foot .spacer { flex: 1; }
+  .foot small { color: var(--faint); font-size: 13px; }
+  .foot a { color: var(--muted); text-decoration: none; font-size: 13.5px; }
+  .foot a:hover { color: var(--ink); }
+
+  /* entrance motion */
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .rise { animation: rise .6s cubic-bezier(.2,.7,.2,1) both; }
+  .rise.d1 { animation-delay: .06s; } .rise.d2 { animation-delay: .12s; } .rise.d3 { animation-delay: .18s; }
+  @media (prefers-reduced-motion: reduce){ .rise { animation: none; } }
+</style>
+
+<header>
+  <div class="wrap nav">
+    <span class="brand"><span class="glyph" aria-hidden="true"></span> Qeloma</span>
+    <span class="spacer"></span>
+    <a class="link" href="#features">Features</a>
+    <a class="link" href="#how">How it works</a>
+    <a class="link" href="#" >Sign in</a>
+    <a class="btn btn-primary" href="#start">Start free</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow rise">AI LinkedIn Banner Studio · 1584 × 396 px</p>
+        <h1 class="rise d1">Your LinkedIn banner, <span class="mark">designed</span> — not decorated.</h1>
+        <p class="lede rise d2">
+          Qeloma Cover Studio turns a few lines about your work into a high-end,
+          safe-zone-perfect cover banner. Any profession. AI-drafted copy. One-click
+          high-res export. No designer, no template lottery.
+        </p>
+        <div class="cta-row rise d2">
+          <a class="btn btn-primary" href="#start">Start designing free →</a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+          <span class="cta-note">Free · bring your own AI key</span>
+        </div>
+      </div>
+
+      <div class="proof rise d3">
+        <div class="proof-cap">
+          <span class="dims">Live canvas · export-ready PNG</span>
+          <span class="dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+        </div>
+        <div class="cover" role="img" aria-label="Sample LinkedIn cover banner generated in Qeloma: Jordan Ellis, Senior Software Engineer, with skill badges and highlight stats.">
+          <div class="cover-grid"></div>
+          <div class="cover-avatar" aria-hidden="true"></div>
+          <div class="cover-inner">
+            <div class="cover-main">
+              <div class="cover-name">Jordan Ellis</div>
+              <div class="cover-title">Senior Software Engineer</div>
+              <div class="cover-tag">I build backend systems that scale, AI features that ship, and integrations that connect.</div>
+              <div class="cover-pills">
+                <span class="pill">NestJS</span><span class="pill">TypeScript</span>
+                <span class="pill">PostgreSQL</span><span class="pill">GCP</span><span class="pill">Gemini</span>
+              </div>
+            </div>
+            <div class="cover-bento">
+              <div class="bento-cell"><div class="k">Experience</div><div class="v">7+ Years</div></div>
+              <div class="bento-cell"><div class="k">Focus</div><div class="v">100+ Projects</div></div>
+              <div class="bento-cell"><div class="k">Cloud</div><div class="v">GCP Certified</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <div class="wrap">
+      <span class="lbl">Built for every profession</span>
+      <div class="roles">
+        <span class="role-chip">Engineers</span>
+        <span class="role-chip">Designers</span>
+        <span class="role-chip">Marketers</span>
+        <span class="role-chip">Sales</span>
+        <span class="role-chip">Founders</span>
+        <span class="role-chip">People &amp; HR</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">What's inside</p>
+        <h2>Everything the cover needs, nothing you don't.</h2>
+        <p>A focused canvas tool — the parts that make a banner look intentional, and the AI that writes the words when you'd rather not.</p>
+      </div>
+
+      <div class="features">
+        <article class="card">
+          <span class="tag">AI copy</span>
+          <h3>Words for any role</h3>
+          <p>Type your role in plain language and describe your background. Gemini drafts taglines, skill badges, and sub-specialties you apply with one click.</p>
+          <div class="mini" aria-hidden="true"></div>
+        </article>
+        <article class="card">
+          <span class="tag">Your key</span>
+          <h3>Bring your own AI key</h3>
+          <p>Paste your own Gemini key and generation runs on your quota. It stays in your browser session — never stored on our servers.</p>
+          <div class="mini" aria-hidden="true"></div>
+        </article>
+        <article class="card">
+          <span class="tag">Layout</span>
+          <h3>Safe-zone guides</h3>
+          <p>Overlays show exactly where LinkedIn's avatar covers the banner on desktop and mobile, so your text never ends up hidden.</p>
+          <div class="mini" aria-hidden="true"></div>
+        </article>
+        <article class="card">
+          <span class="tag">Media</span>
+          <h3>Images by URL</h3>
+          <p>Drop in an avatar, a logo, and a full background from any public URL. See it composited on the live 4:1 canvas instantly.</p>
+          <div class="mini" aria-hidden="true"></div>
+        </article>
+        <article class="card">
+          <span class="tag">Style</span>
+          <h3>Themes &amp; presets</h3>
+          <p>Curated color presets, background patterns, fonts, and accents — tuned for a clean, senior, minimalist finish.</p>
+          <div class="mini" aria-hidden="true"></div>
+        </article>
+        <article class="card">
+          <span class="tag">Export</span>
+          <h3>One-click high-res PNG</h3>
+          <p>Download a crisp 1584×396 file at exactly LinkedIn's ratio. Rendering happens in your browser — your data never leaves it.</p>
+          <div class="mini" aria-hidden="true"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="how" style="padding-top:0;">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Three steps</p>
+        <h2>From blank profile to finished banner.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">Step 01</div>
+          <h3>Describe yourself</h3>
+          <p>Enter your name, role, and a few lines of background — or paste your LinkedIn summary. Any field, any seniority.</p>
+        </div>
+        <div class="step">
+          <div class="n">Step 02</div>
+          <h3>Let AI draft the copy</h3>
+          <p>Get tailored taglines, skill badges, and sub-specialties. Apply the ones you like, tweak theme and layout to taste.</p>
+        </div>
+        <div class="step">
+          <div class="n">Step 03</div>
+          <h3>Export &amp; upload</h3>
+          <p>Download the high-res PNG and drop it straight onto LinkedIn. Perfect ratio, safe zones respected.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="start">
+    <div class="cta-band">
+      <p class="eyebrow">Get started</p>
+      <h2>Design a banner people actually stop on.</h2>
+      <p>Free to use. Bring your own Gemini key for unlimited drafts. Create an account to save your work.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#">Start designing free →</a>
+        <a class="btn btn-ghost" href="#">Create an account</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="brand"><span class="glyph" aria-hidden="true"></span> Qeloma</span>
+    <span class="spacer"></span>
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#">Privacy</a>
+    <small>© 2026 Qeloma · Powered by Google Gemini</small>
+  </div>
+</footer>
