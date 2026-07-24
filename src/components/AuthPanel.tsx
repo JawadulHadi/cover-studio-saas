@@ -43,14 +43,14 @@ export default function AuthPanel() {
 
     const { error: authError } =
       mode === "sign-up"
-        ? await supabase.auth.signUp({
+        ? await supabase!.auth.signUp({
             email,
             password,
             // Consent is stored in user metadata and copied into the leads
             // table by a DB trigger (see supabase/migrations/0001_leads_marketing.sql).
             options: { data: { marketing_consent: marketingConsent } },
           })
-        : await supabase.auth.signInWithPassword({ email, password });
+        : await supabase!.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError(authError.message);
@@ -63,7 +63,7 @@ export default function AuthPanel() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await supabase!.auth.signOut();
     setPanelOpen(false);
   };
 
@@ -137,7 +137,7 @@ export default function AuthPanel() {
                   type="checkbox"
                   checked={marketingConsent}
                   onChange={(e) => setMarketingConsent(e.target.checked)}
-                  className="mt-0.5 accent-[--brand] cursor-pointer"
+                  className="mt-0.5 accent-brand cursor-pointer"
                 />
                 <span className="text-[10px] text-muted leading-snug">
                   I'd like to receive occasional product updates and tips from Qeloma. You can unsubscribe anytime.
