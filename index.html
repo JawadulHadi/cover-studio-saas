@@ -4,11 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Qeloma Cover Studio — AI LinkedIn Banner Designer</title>
-    <meta name="description" content="Design high-end, minimalist LinkedIn cover banners for any profession, with AI-assisted copy and safe-zone guides. By Qeloma." />
+    <meta name="description" content="Design a standout LinkedIn cover banner for any profession — AI-drafted copy, safe-zone guides, curated themes, and one-click high-res export. By Qeloma." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script>
+      // Resolve the theme before first paint so there is no flash:
+      // saved preference wins, otherwise follow the OS setting.
+      (function () {
+        var t = localStorage.getItem("qeloma-theme");
+        if (t !== "light" && t !== "dark") {
+          t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

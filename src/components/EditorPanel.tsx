@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { BannerConfig } from "../types";
 import {
   User, Palette, BadgePlus, BarChart3, Plus, X, Laptop, Smartphone,
-  Info, Sparkles, Layout, Type as FontIcon, Grid, Mail, MapPin,
-  Image as ImageIcon, Link as LinkIcon, UserCircle2, Sticker
+  Info, Layout, Mail, MapPin,
+  Image as ImageIcon, UserCircle2, Sticker
 } from "lucide-react";
 
 interface EditorPanelProps {
@@ -11,8 +11,23 @@ interface EditorPanelProps {
   onChangeConfig: (updates: Partial<BannerConfig>) => void;
 }
 
+type TabId = "text" | "style" | "skills" | "highlights" | "images";
+
+const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: "text", label: "Identity", icon: User },
+  { id: "style", label: "Theme & Style", icon: Palette },
+  { id: "skills", label: "Skill Badges", icon: BadgePlus },
+  { id: "highlights", label: "Highlights", icon: BarChart3 },
+  { id: "images", label: "Images", icon: ImageIcon },
+];
+
+// Shared field styling so every input in the panel stays consistent.
+const inputCls =
+  "w-full bg-app border border-line focus:border-brand rounded-lg px-3 py-2 text-xs text-ink placeholder-faint transition-all outline-none";
+const labelCls = "block text-[11px] font-bold uppercase tracking-wider text-muted mb-1";
+
 export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps) {
-  const [activeTab, setActiveTab] = useState<"text" | "style" | "skills" | "highlights" | "images">("text");
+  const [activeTab, setActiveTab] = useState<TabId>("text");
   const [newSkill, setNewSkill] = useState("");
 
   const presets = [
@@ -102,142 +117,101 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
   };
 
   return (
-    <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl overflow-hidden shadow-2xl" id="editor-control-panel">
+    <div className="bg-surface border border-line rounded-xl overflow-hidden shadow-sm transition-colors" id="editor-control-panel">
       {/* Editor Tab Navigation */}
-      <div className="flex border-b border-[#111] bg-[#050505]/60 p-1">
-        <button
-          onClick={() => setActiveTab("text")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-            activeTab === "text" 
-              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md" 
-              : "text-[#666] hover:text-[#c5c5c5]"
-          }`}
-        >
-          <User className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Identity</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("style")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-            activeTab === "style" 
-              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md" 
-              : "text-[#666] hover:text-[#c5c5c5]"
-          }`}
-        >
-          <Palette className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Theme & Style</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("skills")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-            activeTab === "skills" 
-              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md" 
-              : "text-[#666] hover:text-[#c5c5c5]"
-          }`}
-        >
-          <BadgePlus className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Skills Pills</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("highlights")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-            activeTab === "highlights"
-              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md"
-              : "text-[#666] hover:text-[#c5c5c5]"
-          }`}
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Highlights</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("images")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-            activeTab === "images"
-              ? "bg-[#111] text-blue-400 border border-[#222]/50 shadow-md"
-              : "text-[#666] hover:text-[#c5c5c5]"
-          }`}
-        >
-          <ImageIcon className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Images</span>
-        </button>
+      <div className="flex border-b border-line bg-raised/60 p-1">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              activeTab === id
+                ? "bg-surface text-brand border border-line shadow-sm"
+                : "text-faint hover:text-ink"
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{label}</span>
+          </button>
+        ))}
       </div>
 
       <div className="p-6">
         {/* TAB 1: IDENTITY & COPY */}
         {activeTab === "text" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 mb-2 text-brand text-xs font-bold uppercase tracking-wider">
               <User className="w-4 h-4" />
               <span>Personal Identity & Position details</span>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1">Full Name</label>
+                <label className={labelCls}>Full Name</label>
                 <input
                   type="text"
                   value={config.name}
                   onChange={(e) => onChangeConfig({ name: e.target.value })}
-                  className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all outline-none"
+                  className={inputCls}
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1">Professional Title</label>
+                <label className={labelCls}>Professional Title</label>
                 <input
                   type="text"
                   value={config.title}
                   onChange={(e) => onChangeConfig({ title: e.target.value })}
-                  placeholder="e.g. Senior Backend Engineer"
-                  className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all outline-none"
+                  placeholder="e.g. Product Marketing Lead"
+                  className={inputCls}
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1">Main Scaling Tagline</label>
+                <label className={labelCls}>Main Tagline</label>
                 <input
                   type="text"
                   value={config.tagline}
                   onChange={(e) => onChangeConfig({ tagline: e.target.value })}
-                  className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all outline-none"
+                  className={inputCls}
                 />
-                <p className="text-[10px] text-[#555] mt-1 italic">Typically a punchy sentence summarizing your value prop.</p>
+                <p className="text-[10px] text-faint mt-1 italic">Typically a punchy sentence summarizing your value prop.</p>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1">Secondary Subtitle / Stack Summary</label>
+                <label className={labelCls}>Secondary Subtitle / Specialties</label>
                 <input
                   type="text"
                   value={config.subTitle}
                   onChange={(e) => onChangeConfig({ subTitle: e.target.value })}
-                  className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all outline-none"
+                  className={inputCls}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1">
-                    <Mail className="w-3.5 h-3.5 text-[#555]" />
+                  <label className={`${labelCls} flex items-center gap-1`}>
+                    <Mail className="w-3.5 h-3.5 text-faint" />
                     <span>Email Address</span>
                   </label>
                   <input
                     type="text"
                     value={config.email}
                     onChange={(e) => onChangeConfig({ email: e.target.value })}
-                    className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all outline-none"
+                    className={inputCls}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-[#555]" />
+                  <label className={`${labelCls} flex items-center gap-1`}>
+                    <MapPin className="w-3.5 h-3.5 text-faint" />
                     <span>Location</span>
                   </label>
                   <input
                     type="text"
                     value={config.location}
                     onChange={(e) => onChangeConfig({ location: e.target.value })}
-                    className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all outline-none"
+                    className={inputCls}
                   />
                 </div>
               </div>
@@ -248,7 +222,7 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
         {/* TAB 2: STYLE & THEME */}
         {activeTab === "style" && (
           <div className="space-y-5">
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-brand text-xs font-bold uppercase tracking-wider">
               <Palette className="w-4 h-4" />
               <span>Choose a curated color preset</span>
             </div>
@@ -260,39 +234,39 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                   key={preset.id}
                   onClick={() => handleApplyPreset(preset)}
                   className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all cursor-pointer ${
-                    config.templateId === preset.id 
-                      ? "border-blue-500 bg-blue-950/10 shadow-md" 
-                      : "border-[#1a1a1a] bg-[#050505]/40 hover:border-[#222]"
+                    config.templateId === preset.id
+                      ? "border-brand bg-brand/5 shadow-md"
+                      : "border-line bg-app/40 hover:border-faint"
                   }`}
                 >
-                  <span className="text-xs font-bold text-white mb-1.5">{preset.name}</span>
+                  <span className="text-xs font-bold text-ink mb-1.5">{preset.name}</span>
                   <div className="flex gap-1.5 items-center w-full">
                     {/* Circle indicators */}
-                    <div className="w-3.5 h-3.5 rounded-full border border-[#1a1a1a] shadow-sm" style={{ backgroundColor: preset.accentColor }} />
-                    <div className="w-3.5 h-3.5 rounded-full border border-[#1a1a1a] shadow-sm" style={{ backgroundColor: preset.themeColor === "minimal-white" ? "#ffffff" : "#0f172a" }} />
-                    <span className="text-[10px] text-[#666] capitalize ml-auto">{preset.bgPattern}</span>
+                    <div className="w-3.5 h-3.5 rounded-full border border-line shadow-sm" style={{ backgroundColor: preset.accentColor }} />
+                    <div className="w-3.5 h-3.5 rounded-full border border-line shadow-sm" style={{ backgroundColor: preset.themeColor === "minimal-white" ? "#ffffff" : "#0f172a" }} />
+                    <span className="text-[10px] text-faint capitalize ml-auto">{preset.bgPattern}</span>
                   </div>
                 </button>
               ))}
             </div>
 
-            <div className="border-t border-[#111] pt-4 space-y-4">
-              <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <div className="border-t border-line pt-4 space-y-4">
+              <div className="flex items-center gap-2 text-brand text-xs font-bold uppercase tracking-wider">
                 <Layout className="w-4 h-4" />
                 <span>Layout & Fine-tuning</span>
               </div>
 
               {/* Background Graphics */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1">Background Pattern style</label>
+                <label className={labelCls}>Background Pattern style</label>
                 <select
                   value={config.bgPattern}
                   onChange={(e) => onChangeConfig({ bgPattern: e.target.value })}
-                  className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all cursor-pointer outline-none"
+                  className={`${inputCls} cursor-pointer`}
                 >
                   <option value="grid">Bento Grid Lines (Clean Layout)</option>
                   <option value="circuit">Circuit Traces (AI / Hardware Vibe)</option>
-                  <option value="waves">Smooth waves (SaaS Flows)</option>
+                  <option value="waves">Smooth waves (Flowing, Organic)</option>
                   <option value="polygons">Network Polygons (Mesh Nodes)</option>
                   <option value="solid">Minimal Solid Color</option>
                 </select>
@@ -301,66 +275,68 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
               {/* Fonts */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1">Primary Font Family</label>
+                  <label className={labelCls}>Banner Font Family</label>
                   <select
                     value={config.fontFamily}
                     onChange={(e) => onChangeConfig({ fontFamily: e.target.value })}
-                    className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs text-[#e5e5e5] transition-all cursor-pointer outline-none"
+                    className={`${inputCls} cursor-pointer`}
                   >
                     <option value="Space Grotesk">Space Grotesk (Tech)</option>
                     <option value="Inter">Inter (Swiss Modern)</option>
+                    <option value="Sora">Sora (Geometric Display)</option>
+                    <option value="Manrope">Manrope (Friendly Modern)</option>
                     <option value="JetBrains Mono">JetBrains Mono (Mono)</option>
                     <option value="editorial">Elegant Serif (Editorial)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1">Color Palette Accent</label>
+                  <label className={labelCls}>Color Palette Accent</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
                       value={config.accentColor}
                       onChange={(e) => onChangeConfig({ accentColor: e.target.value })}
-                      className="w-8 h-8 rounded border border-[#1a1a1a] bg-transparent cursor-pointer outline-none"
+                      className="w-8 h-8 rounded border border-line bg-transparent cursor-pointer outline-none"
                     />
                     <input
                       type="text"
                       value={config.accentColor}
                       onChange={(e) => onChangeConfig({ accentColor: e.target.value })}
-                      className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-2 py-1.5 text-[10px] text-slate-300 font-mono"
+                      className="flex-1 bg-app border border-line focus:border-brand rounded-lg px-2 py-1.5 text-[10px] text-muted font-mono outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Safe-Zone Overlay Configurations */}
-              <div className="bg-[#050505]/40 border border-[#111] rounded-lg p-3 space-y-3.5">
+              <div className="bg-app/40 border border-line rounded-lg p-3 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300">LinkedIn Profile Avatar Guide</label>
-                    <span className="text-[10px] text-[#555]">Overlay safe zones to check layout coverage</span>
+                    <label className="block text-xs font-bold text-ink">LinkedIn Profile Avatar Guide</label>
+                    <span className="text-[10px] text-faint">Overlay safe zones to check layout coverage</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={config.showProfileSafeZone}
                       onChange={(e) => onChangeConfig({ showProfileSafeZone: e.target.checked })}
-                      className="sr-only peer" 
+                      className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-[#111] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#888] after:border-[#888] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500 peer-checked:after:bg-[#050505]" />
+                    <div className="w-9 h-5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-line after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand" />
                   </label>
                 </div>
 
                 {config.showProfileSafeZone && (
-                  <div className="flex items-center justify-between border-t border-[#111] pt-2">
-                    <span className="text-xs font-medium text-[#666]">Preview Layout Overlap:</span>
+                  <div className="flex items-center justify-between border-t border-line pt-2">
+                    <span className="text-xs font-medium text-faint">Preview Layout Overlap:</span>
                     <div className="flex gap-2">
                       <button
                         onClick={() => onChangeConfig({ safeZoneDevice: "desktop" })}
                         className={`px-2.5 py-1 rounded text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
                           config.safeZoneDevice === "desktop"
-                            ? "bg-[#111] text-blue-400 border border-[#222]"
-                            : "bg-transparent text-[#666] hover:text-[#c5c5c5]"
+                            ? "bg-brand/10 text-brand border border-brand/30"
+                            : "bg-transparent text-faint hover:text-ink"
                         }`}
                       >
                         <Laptop className="w-3.5 h-3.5" />
@@ -370,8 +346,8 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                         onClick={() => onChangeConfig({ safeZoneDevice: "mobile" })}
                         className={`px-2.5 py-1 rounded text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
                           config.safeZoneDevice === "mobile"
-                            ? "bg-[#111] text-blue-400 border border-[#222]"
-                            : "bg-transparent text-[#666] hover:text-[#c5c5c5]"
+                            ? "bg-brand/10 text-brand border border-brand/30"
+                            : "bg-transparent text-faint hover:text-ink"
                         }`}
                       >
                         <Smartphone className="w-3.5 h-3.5" />
@@ -385,29 +361,31 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
           </div>
         )}
 
-        {/* TAB 3: SKILLS PILLS */}
+        {/* TAB 3: SKILL BADGES */}
         {activeTab === "skills" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-brand text-xs font-bold uppercase tracking-wider">
               <BadgePlus className="w-4 h-4" />
-              <span>Technology Badge Pills</span>
+              <span>Skill Badges</span>
             </div>
-            
-            <p className="text-[11px] text-[#888] leading-relaxed bg-[#050505]/40 p-3 border border-[#111] rounded-lg">
-              Add key technologies (e.g. <strong>Gemini 2.5 Flash</strong>, <strong>NestJS</strong>, <strong>PostgreSQL</strong>) to display on your cover. They will render as aligned pill badges.
+
+            <p className="text-[11px] text-muted leading-relaxed bg-app/40 p-3 border border-line rounded-lg">
+              Add the skills you want on your cover — any field works (e.g. <strong>Brand Strategy</strong>,{" "}
+              <strong>Figma</strong>, <strong>Python</strong>, <strong>Negotiation</strong>). They render as
+              aligned pill badges on the banner.
             </p>
 
             {/* List skills */}
-            <div className="flex flex-wrap gap-2 py-1 max-h-[140px] overflow-y-auto pr-1 border border-[#111] rounded-lg p-2 bg-[#050505]/20">
+            <div className="flex flex-wrap gap-2 py-1 max-h-[140px] overflow-y-auto pr-1 border border-line rounded-lg p-2 bg-app/20">
               {config.skills.map((skill, index) => (
                 <span
                   key={index}
-                  className="px-2.5 py-1 bg-[#111] hover:bg-[#161616] border border-[#222] rounded-full text-xs text-[#c5c5c5] flex items-center gap-1.5 transition-all shadow-sm select-none"
+                  className="px-2.5 py-1 bg-raised hover:bg-app border border-line rounded-full text-xs text-ink flex items-center gap-1.5 transition-all shadow-sm select-none"
                 >
                   <span>{skill}</span>
                   <button
                     onClick={() => handleRemoveSkill(skill)}
-                    className="text-[#666] hover:text-red-400 focus:outline-none"
+                    className="text-faint hover:text-mark focus:outline-none cursor-pointer"
                     title="Remove badge"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -415,7 +393,7 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                 </span>
               ))}
               {config.skills.length === 0 && (
-                <span className="text-xs text-[#666] italic p-1">No technology badges added. Add some below!</span>
+                <span className="text-xs text-faint italic p-1">No skill badges added. Add some below!</span>
               )}
             </div>
 
@@ -425,57 +403,58 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                 type="text"
                 value={newSkill}
                 onChange={(e) => setNewSkill(e.target.value)}
-                placeholder="e.g. Kubernetes, Python, AWS"
-                className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] transition-all outline-none"
+                placeholder="e.g. Public Speaking, SQL, UX Research"
+                className={inputCls}
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer shrink-0 shadow-lg shadow-blue-500/10"
+                className="px-4 py-2 bg-brand hover:opacity-90 text-on-brand text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer shrink-0 shadow-lg shadow-brand/10"
               >
-                <Plus className="w-3.5 h-3.5 text-white" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>Add Badge</span>
               </button>
             </form>
           </div>
         )}
 
-        {/* TAB 4: BENTO HIGHLIGHT DETAILS */}
+        {/* TAB 4: HIGHLIGHTS PANEL */}
         {activeTab === "highlights" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-brand text-xs font-bold uppercase tracking-wider">
               <BarChart3 className="w-4 h-4" />
-              <span>Engineering Highlights Box (Bento Panel)</span>
+              <span>Highlights Panel (Right-Side Bento)</span>
             </div>
 
-            <p className="text-[11px] text-[#888] leading-relaxed bg-[#050505]/40 p-3 border border-[#111] rounded-lg">
-              Customize the three highlight cells displayed on the far right of the cover banner. Use these to display concrete engineering metrics, certs, or specialties.
+            <p className="text-[11px] text-muted leading-relaxed bg-app/40 p-3 border border-line rounded-lg">
+              Customize the three highlight cells displayed on the far right of the cover banner. Use them for
+              concrete numbers and proof — years of experience, projects delivered, certifications, revenue won.
             </p>
 
             <div className="space-y-4">
               {config.highlights.map((highlight, index) => (
-                <div key={index} className="p-4 bg-[#050505]/40 border border-[#111] rounded-lg space-y-2.5">
-                  <div className="text-[10px] font-bold text-[#555] uppercase tracking-widest">
-                    Bento highlight cell #{index + 1}
+                <div key={index} className="p-4 bg-app/40 border border-line rounded-lg space-y-2.5">
+                  <div className="text-[10px] font-bold text-faint uppercase tracking-widest">
+                    Highlight cell #{index + 1}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#888] mb-1">Label</label>
+                      <label className="block text-[10px] font-bold uppercase text-muted mb-1">Label</label>
                       <input
                         type="text"
                         value={highlight.label}
                         onChange={(e) => handleHighlightChange(index, "label", e.target.value)}
                         placeholder="e.g. EXPERIENCE"
-                        className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs text-[#e5e5e5] outline-none transition-all"
+                        className={inputCls}
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#888] mb-1">Value / Metric</label>
+                      <label className="block text-[10px] font-bold uppercase text-muted mb-1">Value / Metric</label>
                       <input
                         type="text"
                         value={highlight.value}
                         onChange={(e) => handleHighlightChange(index, "value", e.target.value)}
-                        placeholder="e.g. 7+ Years"
-                        className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs text-[#e5e5e5] outline-none transition-all"
+                        placeholder="e.g. 8+ Years"
+                        className={inputCls}
                       />
                     </div>
                   </div>
@@ -488,13 +467,13 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
         {/* TAB 5: IMAGES / MEDIA (URL-based, no upload) */}
         {activeTab === "images" && (
           <div className="space-y-5">
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-brand text-xs font-bold uppercase tracking-wider">
               <ImageIcon className="w-4 h-4" />
               <span>Media by Image URL</span>
             </div>
 
-            <p className="text-[11px] text-[#888] leading-relaxed bg-[#050505]/40 p-3 border border-[#111] rounded-lg flex gap-2">
-              <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-muted leading-relaxed bg-app/40 p-3 border border-line rounded-lg flex gap-2">
+              <Info className="w-4 h-4 text-brand shrink-0 mt-0.5" />
               <span>
                 Paste a direct, public image URL (ending in .jpg / .png / .webp). There's no file upload yet.
                 For the <strong>logo</strong> and <strong>background</strong> to appear in the downloaded PNG, the
@@ -505,16 +484,16 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
 
             {/* Avatar URL */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1.5">
-                <UserCircle2 className="w-3.5 h-3.5 text-[#555]" />
+              <label className={`${labelCls} flex items-center gap-1.5`}>
+                <UserCircle2 className="w-3.5 h-3.5 text-faint" />
                 Profile Avatar URL
               </label>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-[#050505] border border-[#1a1a1a] overflow-hidden shrink-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-app border border-line overflow-hidden shrink-0 flex items-center justify-center">
                   {config.customAvatarUrl ? (
                     <img src={config.customAvatarUrl} alt="Avatar preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <UserCircle2 className="w-6 h-6 text-[#333]" />
+                    <UserCircle2 className="w-6 h-6 text-faint" />
                   )}
                 </div>
                 <input
@@ -522,24 +501,24 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                   value={config.customAvatarUrl}
                   onChange={(e) => onChangeConfig({ customAvatarUrl: e.target.value })}
                   placeholder="https://…/headshot.jpg"
-                  className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] outline-none transition-all"
+                  className={inputCls}
                 />
               </div>
-              <p className="text-[10px] text-[#555] mt-1">Shown in the LinkedIn preview mockup below.</p>
+              <p className="text-[10px] text-faint mt-1">Shown in the LinkedIn preview mockup below.</p>
             </div>
 
             {/* Logo URL */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1.5">
-                <Sticker className="w-3.5 h-3.5 text-[#555]" />
+              <label className={`${labelCls} flex items-center gap-1.5`}>
+                <Sticker className="w-3.5 h-3.5 text-faint" />
                 Logo URL
               </label>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-[#050505] border border-[#1a1a1a] overflow-hidden shrink-0 flex items-center justify-center p-1">
+                <div className="w-12 h-12 rounded-lg bg-app border border-line overflow-hidden shrink-0 flex items-center justify-center p-1">
                   {config.customLogoUrl ? (
                     <img src={config.customLogoUrl} alt="Logo preview" className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
                   ) : (
-                    <Sticker className="w-6 h-6 text-[#333]" />
+                    <Sticker className="w-6 h-6 text-faint" />
                   )}
                 </div>
                 <input
@@ -547,24 +526,24 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                   value={config.customLogoUrl}
                   onChange={(e) => onChangeConfig({ customLogoUrl: e.target.value })}
                   placeholder="https://…/logo.png"
-                  className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] outline-none transition-all"
+                  className={inputCls}
                 />
               </div>
-              <p className="text-[10px] text-[#555] mt-1">Rendered in the banner's top-right corner.</p>
+              <p className="text-[10px] text-faint mt-1">Rendered in the banner's top-right corner.</p>
             </div>
 
             {/* Background image URL */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-1 flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-[#555]" />
+              <label className={`${labelCls} flex items-center gap-1.5`}>
+                <ImageIcon className="w-3.5 h-3.5 text-faint" />
                 Background Image URL
               </label>
               <div className="flex items-center gap-3">
-                <div className="w-20 h-12 rounded-lg bg-[#050505] border border-[#1a1a1a] overflow-hidden shrink-0 flex items-center justify-center">
+                <div className="w-20 h-12 rounded-lg bg-app border border-line overflow-hidden shrink-0 flex items-center justify-center">
                   {config.customBgUrl ? (
                     <img src={config.customBgUrl} alt="Background preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <ImageIcon className="w-6 h-6 text-[#333]" />
+                    <ImageIcon className="w-6 h-6 text-faint" />
                   )}
                 </div>
                 <input
@@ -572,16 +551,16 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
                   value={config.customBgUrl}
                   onChange={(e) => onChangeConfig({ customBgUrl: e.target.value })}
                   placeholder="https://…/background.jpg"
-                  className="flex-1 bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] outline-none transition-all"
+                  className={inputCls}
                 />
               </div>
-              <p className="text-[10px] text-[#555] mt-1">
+              <p className="text-[10px] text-faint mt-1">
                 Fills the whole banner with a readability overlay. Clear the field to return to the theme background.
               </p>
               {config.customBgUrl && (
                 <button
                   onClick={() => onChangeConfig({ customBgUrl: "" })}
-                  className="mt-2 text-[10px] font-bold text-red-400/80 hover:text-red-400 flex items-center gap-1 cursor-pointer"
+                  className="mt-2 text-[10px] font-bold text-mark/80 hover:text-mark flex items-center gap-1 cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                   Remove background image

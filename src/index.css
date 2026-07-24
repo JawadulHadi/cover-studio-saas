@@ -1,15 +1,69 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Sora:wght@400;600;700;800&family=Manrope:wght@400;600;700;800&display=swap');
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+/*
+  Qeloma theme tokens — the single source of truth for the app UI in both
+  light and dark. <html data-theme="..."> (set pre-paint in index.html,
+  toggled from the header) selects the active set; the Tailwind utilities
+  generated from @theme inline read these variables at paint time, so every
+  bg-surface / text-ink class re-resolves live when the theme flips.
+*/
+:root {
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --raised: #f4f6fa;
+  --ink: #12141b;
+  --muted: #565c69;
+  --faint: #8a909d;
+  --line: #d8dce5;
+  --brand: #2b44e6;
+  --on-brand: #ffffff;
+  --mark: #e4562a;
+  --grid-line: rgba(18, 20, 27, 0.05);
+}
+
+:root[data-theme="dark"] {
+  --bg: #0a0b0f;
+  --surface: #12141f;
+  --raised: #181b29;
+  --ink: #eceef4;
+  --muted: #9ba1af;
+  --faint: #6c7280;
+  --line: #262a38;
+  --brand: #6e83ff;
+  --on-brand: #0a0b0f;
+  --mark: #ff7a4d;
+  --grid-line: rgba(255, 255, 255, 0.025);
+}
+
+@theme inline {
+  --color-app: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-on-brand: var(--on-brand);
+  --color-mark: var(--mark);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
-/* Custom background grid accent for the app dashboard */
+html {
+  color-scheme: light;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Faint blueprint grid behind the whole app — works in both themes. */
 .app-glow-grid {
-  background-color: #050505;
+  background-color: var(--bg);
   background-size: 40px 40px;
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
 }
