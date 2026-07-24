@@ -308,9 +308,16 @@ export default function BannerCanvas({ config, className = "", onExportRef, embe
     }
 
     // 3. Render Texts & Content
-    // Font styling
-    const sansFamily = config.fontFamily === "Space Grotesk" ? '"Space Grotesk", "Inter", sans-serif' : 
-                       config.fontFamily === "JetBrains Mono" ? '"JetBrains Mono", monospace' : '"Inter", sans-serif';
+    // Font styling — keys must match the Banner Font Family options in the
+    // editor panel; every family here is loaded via index.css.
+    const FONT_FAMILIES: Record<string, string> = {
+      "Space Grotesk": '"Space Grotesk", "Inter", sans-serif',
+      "Inter": '"Inter", sans-serif',
+      "Sora": '"Sora", "Inter", sans-serif',
+      "Manrope": '"Manrope", "Inter", sans-serif',
+      "JetBrains Mono": '"JetBrains Mono", monospace',
+    };
+    const sansFamily = FONT_FAMILIES[config.fontFamily] || '"Inter", sans-serif';
     const serifFamily = '"Playfair Display", "Georgia", serif';
     const primaryFont = config.fontFamily === "editorial" ? serifFamily : sansFamily;
 
@@ -498,7 +505,7 @@ export default function BannerCanvas({ config, className = "", onExportRef, embe
       ctx.fillStyle = subtitleColor;
       ctx.font = `bold 12px ${sansFamily}`;
       ctx.textAlign = "left";
-      ctx.fillText("ENGINEERING PROFILE HIGHLIGHTS", bentoX + 24, bentoStartY + 30);
+      ctx.fillText("PROFILE HIGHLIGHTS", bentoX + 24, bentoStartY + 30);
 
       // Render highlights list
       config.highlights.forEach((highlight, hIdx) => {
@@ -537,28 +544,23 @@ export default function BannerCanvas({ config, className = "", onExportRef, embe
     ctx.textAlign = "left";
     ctx.font = `500 13px ${sansFamily}`;
     
-    // Draw email
-    if (config.email) {
-      ctx.fillStyle = subtitleColor;
-      ctx.fillText("CONTACT / RECRUITMENT:", startX, footerY);
-      
-      ctx.fillStyle = textColor;
-      ctx.font = `bold 13px ${sansFamily}`;
-      ctx.fillText(config.email, startX + 175, footerY);
-    }
-
-    // Draw location
-    if (config.location) {
+    // Labels and values are measured as they're drawn so the spacing adapts
+    // to any label/content length instead of relying on fixed offsets.
+    let footerX = startX;
+    const drawFooterPair = (label: string, value: string) => {
       ctx.fillStyle = subtitleColor;
       ctx.font = `500 13px ${sansFamily}`;
-      const emailWidth = ctx.measureText(config.email).width;
-      const locStartX = startX + 175 + emailWidth + 36;
-      
-      ctx.fillText("LOCATION:", locStartX, footerY);
+      ctx.fillText(label, footerX, footerY);
+      footerX += ctx.measureText(label).width + 10;
+
       ctx.fillStyle = textColor;
       ctx.font = `bold 13px ${sansFamily}`;
-      ctx.fillText(config.location, locStartX + 80, footerY);
-    }
+      ctx.fillText(value, footerX, footerY);
+      footerX += ctx.measureText(value).width + 36;
+    };
+
+    if (config.email) drawFooterPair("CONTACT:", config.email);
+    if (config.location) drawFooterPair("LOCATION:", config.location);
 
     // G. Custom logo (top-right corner, above the highlights box)
     const logoImg = !skipImages && config.customLogoUrl ? getLoadedImage(config.customLogoUrl) : null;
@@ -739,7 +741,7 @@ export default function BannerCanvas({ config, className = "", onExportRef, embe
       {/* Container wrapper that maintains the exact 4:1 LinkedIn Aspect Ratio */}
       <div
         className={`w-full aspect-[4/1] bg-slate-950 overflow-hidden ${
-          embedded ? "" : "rounded-xl shadow-2xl border border-slate-800"
+          embedded ? "" : "rounded-xl shadow-2xl border border-line"
         }`}
       >
         <canvas

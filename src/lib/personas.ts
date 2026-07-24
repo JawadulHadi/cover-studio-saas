@@ -22,7 +22,9 @@ export const ARCHETYPES: string[] = [
   "Bold & Confident",
 ];
 
-export const DEFAULT_ROLE = "Software Engineer";
+// Matches the app's default demo persona (a marketer) so the assistant's
+// initial state and the banner tell one coherent story.
+export const DEFAULT_ROLE = "Marketing Manager";
 
 export const DEFAULT_ARCHETYPE = ARCHETYPES[0];
 

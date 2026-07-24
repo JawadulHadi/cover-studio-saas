@@ -5,6 +5,9 @@ import { LogIn, LogOut, Loader2, Mail, Lock, X, UserCircle2 } from "lucide-react
 
 type Mode = "sign-in" | "sign-up";
 
+const inputCls =
+  "w-full bg-app border border-line focus:border-brand rounded-lg pl-9 pr-3 py-2 text-xs text-ink placeholder-faint focus:ring-1 focus:ring-brand transition-all outline-none";
+
 export default function AuthPanel() {
   const [session, setSession] = useState<Session | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -67,15 +70,15 @@ export default function AuthPanel() {
   if (session) {
     return (
       <div className="flex items-center gap-2.5">
-        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#050505]/60 border border-[#111] text-[10px] font-mono font-semibold text-[#888]">
-          <UserCircle2 className="w-3.5 h-3.5 text-blue-400" />
+        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-raised border border-line text-[10px] font-mono font-semibold text-muted">
+          <UserCircle2 className="w-3.5 h-3.5 text-brand" />
           {session.user.email}
         </div>
         <button
           onClick={handleSignOut}
-          className="px-3 py-1.5 rounded-lg border border-[#1a1a1a] hover:bg-[#111] text-xs text-[#c5c5c5] font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+          className="px-3 py-1.5 rounded-lg border border-line hover:bg-raised text-xs text-muted hover:text-ink font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
         >
-          <LogOut className="w-3.5 h-3.5 text-[#888]" />
+          <LogOut className="w-3.5 h-3.5" />
           <span>Sign Out</span>
         </button>
       </div>
@@ -86,37 +89,37 @@ export default function AuthPanel() {
     <div className="relative">
       <button
         onClick={() => setPanelOpen((v) => !v)}
-        className="px-3 py-1.5 rounded-lg border border-[#1a1a1a] hover:bg-[#111] text-xs text-[#c5c5c5] font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+        className="px-3 py-1.5 rounded-lg border border-line hover:bg-raised text-xs text-muted hover:text-ink font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
       >
-        <LogIn className="w-3.5 h-3.5 text-[#888]" />
+        <LogIn className="w-3.5 h-3.5" />
         <span>Sign In</span>
       </button>
 
       {panelOpen && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4 shadow-2xl z-50 space-y-3">
+        <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-surface border border-line rounded-xl p-4 shadow-2xl z-50 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-ink uppercase tracking-wider">
               {mode === "sign-in" ? "Sign In" : "Create Account"}
             </h4>
-            <button onClick={() => setPanelOpen(false)} className="text-[#555] hover:text-[#c5c5c5] cursor-pointer">
+            <button onClick={() => setPanelOpen(false)} className="text-faint hover:text-ink cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-2.5">
             <div className="relative">
-              <Mail className="w-3.5 h-3.5 text-[#555] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Mail className="w-3.5 h-3.5 text-faint absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg pl-9 pr-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] focus:ring-1 focus:ring-blue-500 transition-all outline-none"
+                className={inputCls}
               />
             </div>
             <div className="relative">
-              <Lock className="w-3.5 h-3.5 text-[#555] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Lock className="w-3.5 h-3.5 text-faint absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
                 required
@@ -124,7 +127,7 @@ export default function AuthPanel() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full bg-[#050505] border border-[#1a1a1a] focus:border-blue-500 rounded-lg pl-9 pr-3 py-2 text-xs text-[#e5e5e5] placeholder-[#444] focus:ring-1 focus:ring-blue-500 transition-all outline-none"
+                className={inputCls}
               />
             </div>
 
@@ -134,21 +137,21 @@ export default function AuthPanel() {
                   type="checkbox"
                   checked={marketingConsent}
                   onChange={(e) => setMarketingConsent(e.target.checked)}
-                  className="mt-0.5 accent-blue-500 cursor-pointer"
+                  className="mt-0.5 accent-[--brand] cursor-pointer"
                 />
-                <span className="text-[10px] text-[#888] leading-snug">
+                <span className="text-[10px] text-muted leading-snug">
                   I'd like to receive occasional product updates and tips from Qeloma. You can unsubscribe anytime.
                 </span>
               </label>
             )}
 
-            {error && <p className="text-[11px] text-red-400">{error}</p>}
-            {message && <p className="text-[11px] text-emerald-400">{message}</p>}
+            {error && <p className="text-[11px] text-mark">{error}</p>}
+            {message && <p className="text-[11px] text-emerald-500">{message}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full bg-brand hover:opacity-90 text-on-brand font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : mode === "sign-in" ? "Sign In" : "Create Account"}
             </button>
@@ -160,7 +163,7 @@ export default function AuthPanel() {
               setError(null);
               setMessage(null);
             }}
-            className="w-full text-center text-[10px] text-[#666] hover:text-[#c5c5c5] transition-all cursor-pointer"
+            className="w-full text-center text-[10px] text-faint hover:text-ink transition-all cursor-pointer"
           >
             {mode === "sign-in" ? "No account? Create one" : "Already have an account? Sign in"}
           </button>
