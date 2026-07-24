@@ -5,9 +5,11 @@ interface BannerCanvasProps {
   config: BannerConfig;
   className?: string;
   onExportRef?: (exportFn: () => void) => void;
+  /** Frameless mode for embedding inside other previews (e.g. the LinkedIn mockup). */
+  embedded?: boolean;
 }
 
-export default function BannerCanvas({ config, className = "", onExportRef }: BannerCanvasProps) {
+export default function BannerCanvas({ config, className = "", onExportRef, embedded = false }: BannerCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Cache of loaded <img> elements keyed by URL, plus a version counter that
@@ -314,22 +316,43 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
 
     // LEFT OFFSET CONFIGURATION (IMPORTANT SAFE-ZONE RECONCILIATION)
     // To accommodate the profile picture fully (on left on desktop, and central on mobile),
-    // we push the main layout to the right. 
+    // we push the main layout to the right.
     // Left border boundary for text content = x = 450 (comfortably clears the 170px wide profile picture + offsets).
     // If the layout is centered, x is computed differently.
     const startX = 450;
+    // Right boundary for the main text column (bento panel starts at x = 1150).
+    const textMaxWidth = 1150 - startX - 30;
+
+    // Auto-fit helper: shrink the font size until the text fits maxWidth.
+    // Sets ctx.font as a side effect and returns the chosen size.
+    const fitFont = (
+      text: string,
+      stylePrefix: string, // e.g. "bold" or "italic 500"
+      baseSize: number,
+      family: string,
+      maxWidth: number,
+      minSize = 12
+    ): number => {
+      let size = baseSize;
+      ctx.font = `${stylePrefix} ${size}px ${family}`;
+      while (size > minSize && ctx.measureText(text).width > maxWidth) {
+        size -= 1;
+        ctx.font = `${stylePrefix} ${size}px ${family}`;
+      }
+      return size;
+    };
 
     // A. User Name & Title
     ctx.textAlign = "left";
-    
-    // Name
+
+    // Name (auto-shrinks for long names)
     ctx.fillStyle = textColor;
-    ctx.font = `bold 42px ${primaryFont}`;
+    fitFont(config.name, "bold", 42, primaryFont, textMaxWidth, 24);
     ctx.fillText(config.name, startX, 85);
 
-    // Title / Specialty
+    // Title / Specialty (auto-shrinks for long titles)
     ctx.fillStyle = subtitleColor;
-    ctx.font = `500 21px ${sansFamily}`;
+    fitFont(config.title, "500", 21, sansFamily, textMaxWidth, 13);
     ctx.fillText(config.title, startX, 125);
 
     // B. Core Scaling Tagline (The highlight sentence)
@@ -338,76 +361,95 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
     ctx.fillRect(startX, 155, 4, 34); // Accent bar on the left of tagline
 
     ctx.fillStyle = textColor;
-    ctx.font = `italic 500 20px ${sansFamily}`;
-    
-    // Word wrap tagline if too long
-    const maxTaglineWidth = 660;
-    const taglineY = 180;
-    const words = config.tagline.split(" ");
-    let line = "";
-    let lines = [];
-    
-    for (let n = 0; n < words.length; n++) {
-      let testLine = line + words[n] + " ";
-      let metrics = ctx.measureText(testLine);
-      if (metrics.width > maxTaglineWidth && n > 0) {
-        lines.push(line);
-        line = words[n] + " ";
-      } else {
-        line = testLine;
+
+    // Word-wrap helper for the tagline at a given font size.
+    const wrapTagline = (size: number): string[] => {
+      ctx.font = `italic 500 ${size}px ${sansFamily}`;
+      const words = config.tagline.split(" ");
+      const wrapped: string[] = [];
+      let line = "";
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        if (ctx.measureText(testLine).width > maxTaglineWidth && n > 0) {
+          wrapped.push(line);
+          line = words[n] + " ";
+        } else {
+          line = testLine;
+        }
       }
+      wrapped.push(line);
+      return wrapped;
+    };
+
+    // Auto font sizing: start at 20px and shrink until the tagline fits in
+    // two lines (down to a floor of 14px) instead of truncating overflow.
+    const maxTaglineWidth = textMaxWidth - 16;
+    const taglineY = 180;
+    let taglineSize = 20;
+    let lines = wrapTagline(taglineSize);
+    while (lines.length > 2 && taglineSize > 14) {
+      taglineSize -= 1;
+      lines = wrapTagline(taglineSize);
     }
-    lines.push(line);
 
     // Render lines (max 2)
+    const taglineLineH = taglineSize + 8;
     lines.slice(0, 2).forEach((taglineLine, idx) => {
-      ctx.fillText(taglineLine, startX + 16, taglineY + (idx * 28));
+      ctx.fillText(taglineLine, startX + 16, taglineY + (idx * taglineLineH));
     });
 
-    // C. Sub-specialties / subtitle
+    // C. Sub-specialties / subtitle (auto-shrinks to fit)
     if (config.subTitle) {
       ctx.fillStyle = `${textColor}dd`;
-      ctx.font = `400 15px ${sansFamily}`;
-      ctx.fillText(config.subTitle, startX + 16, taglineY + (lines.slice(0, 2).length * 28) + 8);
+      fitFont(config.subTitle, "400", 15, sansFamily, maxTaglineWidth, 11);
+      ctx.fillText(config.subTitle, startX + 16, taglineY + (lines.slice(0, 2).length * taglineLineH) + 8);
     }
 
     // D. Tech Badges / Skills Pills
-    // Positioned horizontally below the tagline
-    const badgeStartY = 285;
+    // Positioned below the tagline and wrapped across up to two rows so more
+    // than a single line's worth of skills can display instead of silently
+    // being dropped once the row filled up.
+    const badgeStartY = 278;
+    const badgeHeight = 28;
+    const badgeRowGap = 10;
+    const badgeMaxX = 1120; // stay clear of the right-hand bento panel (x = 1150)
+    const maxBadgeRows = 2;
     let currentX = startX;
-    
+    let badgeRow = 0;
+
     ctx.font = `bold 13px ${sansFamily}`;
-    
-    config.skills.forEach((skill) => {
+
+    for (const skill of config.skills) {
       const textWidth = ctx.measureText(skill).width;
       const padX = 14;
-      const padY = 8;
       const bWidth = textWidth + padX * 2;
-      const bHeight = 28;
 
-      // Wrap check
-      if (currentX + bWidth > 1120) {
-        // Drop down or stop
-        return;
+      // Wrap to the next row when this pill would cross the right boundary.
+      if (currentX + bWidth > badgeMaxX && currentX > startX) {
+        badgeRow++;
+        currentX = startX;
       }
+      if (badgeRow >= maxBadgeRows) break; // no vertical room left
+
+      const badgeY = badgeStartY + badgeRow * (badgeHeight + badgeRowGap);
 
       // Draw rounded pill container
       ctx.fillStyle = config.themeColor === "minimal-white" ? "rgba(15, 23, 42, 0.05)" : "rgba(56, 189, 248, 0.08)";
       ctx.strokeStyle = config.themeColor === "minimal-white" ? "rgba(15, 23, 42, 0.12)" : `${accentColor}33`;
       ctx.lineWidth = 1;
-      
+
       // Draw rounded rectangle manually for compatibility
       const radius = 14;
       ctx.beginPath();
-      ctx.moveTo(currentX + radius, badgeStartY);
-      ctx.lineTo(currentX + bWidth - radius, badgeStartY);
-      ctx.quadraticCurveTo(currentX + bWidth, badgeStartY, currentX + bWidth, badgeStartY + radius);
-      ctx.lineTo(currentX + bWidth, badgeStartY + bHeight - radius);
-      ctx.quadraticCurveTo(currentX + bWidth, badgeStartY + bHeight, currentX + bWidth - radius, badgeStartY + bHeight);
-      ctx.lineTo(currentX + radius, badgeStartY + bHeight);
-      ctx.quadraticCurveTo(currentX, badgeStartY + bHeight, currentX, badgeStartY + bHeight - radius);
-      ctx.lineTo(currentX, badgeStartY + radius);
-      ctx.quadraticCurveTo(currentX, badgeStartY, currentX + radius, badgeStartY);
+      ctx.moveTo(currentX + radius, badgeY);
+      ctx.lineTo(currentX + bWidth - radius, badgeY);
+      ctx.quadraticCurveTo(currentX + bWidth, badgeY, currentX + bWidth, badgeY + radius);
+      ctx.lineTo(currentX + bWidth, badgeY + badgeHeight - radius);
+      ctx.quadraticCurveTo(currentX + bWidth, badgeY + badgeHeight, currentX + bWidth - radius, badgeY + badgeHeight);
+      ctx.lineTo(currentX + radius, badgeY + badgeHeight);
+      ctx.quadraticCurveTo(currentX, badgeY + badgeHeight, currentX, badgeY + badgeHeight - radius);
+      ctx.lineTo(currentX, badgeY + radius);
+      ctx.quadraticCurveTo(currentX, badgeY, currentX + radius, badgeY);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
@@ -415,10 +457,11 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
       // Draw skill text
       ctx.fillStyle = config.themeColor === "minimal-white" ? "#0f172a" : accentColor;
       ctx.textAlign = "center";
-      ctx.fillText(skill, currentX + bWidth / 2, badgeStartY + 18);
+      ctx.fillText(skill, currentX + bWidth / 2, badgeY + 18);
 
       currentX += bWidth + 10; // offset for next pill
-    });
+    }
+    ctx.textAlign = "left"; // reset for subsequent left-aligned text
 
     // E. Highlights / Certifications Panel (Right side, bento block, nice and clean)
     // Draw 3 statistics/focus callouts
@@ -532,40 +575,69 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
       ctx.drawImage(logoImg, WIDTH - lw - 24, 18, lw, lh);
     }
 
+    // Avatar zone geometry — shared by both the rendered headshot and the
+    // safe-zone guide so they always line up. Desktop: bottom-left, overlapping
+    // the banner's bottom edge (like LinkedIn). Mobile: higher and more inset.
+    let avatarCX = 190;
+    let avatarCY = HEIGHT - 40; // most of the circle visible, still hugging the bottom edge
+    let avatarR = 150;
+    if (config.safeZoneDevice === "mobile") {
+      avatarCX = 210;
+      avatarCY = 250;
+      avatarR = 125;
+    }
+
+    // H. Profile avatar drawn into the avatar zone so the headshot actually
+    // renders on the banner (previously only the guide was drawn here).
+    const avatarImg = !skipImages && config.customAvatarUrl ? getLoadedImage(config.customAvatarUrl) : null;
+    if (avatarImg) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      drawImageCover(ctx, avatarImg, avatarCX - avatarR, avatarCY - avatarR, avatarR * 2, avatarR * 2);
+      ctx.restore();
+
+      // Framing ring in the background color to mimic LinkedIn's avatar border.
+      ctx.beginPath();
+      ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = primaryBg;
+      ctx.stroke();
+    }
+
     // 4. Draw Safe Zone overlay IF enabled AND NOT exporting!
     // This highlights the circular area covered by LinkedIn profile picture.
     // It's exceptionally useful so they don't overlay texts here.
     if (config.showProfileSafeZone && !isExporting) {
       ctx.save();
-      
-      let centerX = 150;
-      let centerY = 396; // Overlap bottom edge
-      let radius = 100; // 200px diameter on high-res canvas
 
-      if (config.safeZoneDevice === "mobile") {
-        centerX = 200;
-        centerY = 260; // Shifts higher and more centered
-        radius = 90;
+      // Skip the red fill when a headshot is present so it stays visible —
+      // just outline the zone. Otherwise show the full translucent backdrop.
+      if (!avatarImg) {
+        ctx.fillStyle = "rgba(239, 68, 68, 0.15)";
+        ctx.beginPath();
+        ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // Draw semi-transparent safe-zone backdrop
-      ctx.fillStyle = "rgba(239, 68, 68, 0.15)";
       ctx.strokeStyle = "#ef4444";
       ctx.lineWidth = 2.5;
       ctx.setLineDash([8, 6]);
-      
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Add "Covered by Profile Photo" label
-      ctx.fillStyle = "#ef4444";
-      ctx.setLineDash([]); // Reset dash
-      ctx.font = `bold 11px ${sansFamily}`;
-      ctx.textAlign = "center";
-      ctx.fillText("AVATAR OVERLAP", centerX, centerY - 10);
-      ctx.fillText("SAFE ZONE", centerX, centerY + 8);
+      // Only label the zone when it isn't occupied by the headshot.
+      if (!avatarImg) {
+        ctx.fillStyle = "#ef4444";
+        ctx.setLineDash([]); // Reset dash
+        ctx.font = `bold 11px ${sansFamily}`;
+        ctx.textAlign = "center";
+        ctx.fillText("AVATAR OVERLAP", avatarCX, avatarCY - 10);
+        ctx.fillText("SAFE ZONE", avatarCX, avatarCY + 8);
+      }
 
       ctx.restore();
     }
@@ -610,13 +682,19 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
     }
   };
 
-  // Load custom images (background + logo) as they change; bump a version
-  // counter on load so the canvas re-draws. crossOrigin lets CORS-enabled
-  // hosts stay untainted for export.
+  // Load custom images (background + logo + avatar) as they change; bump a
+  // version counter on load so the canvas re-draws.
+  //
+  // First attempt uses crossOrigin="anonymous" so a CORS-enabled host stays
+  // untainted and can be included in the PNG export. If that fails (many hosts,
+  // including some GCS buckets, don't send CORS headers) we retry WITHOUT
+  // crossOrigin so the image at least renders in the live preview — the export
+  // path already degrades gracefully when the canvas is tainted.
   useEffect(() => {
-    const urls = [config.customBgUrl, config.customLogoUrl].filter(Boolean) as string[];
+    const urls = [config.customBgUrl, config.customLogoUrl, config.customAvatarUrl].filter(Boolean) as string[];
     urls.forEach((url) => {
       if (imageCacheRef.current[url]) return; // already loaded or errored
+
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
@@ -624,12 +702,21 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
         setImageVersion((v) => v + 1);
       };
       img.onerror = () => {
-        imageCacheRef.current[url] = "error";
-        setImageVersion((v) => v + 1);
+        // CORS/other failure — retry without crossOrigin (display-only).
+        const fallback = new Image();
+        fallback.onload = () => {
+          imageCacheRef.current[url] = fallback;
+          setImageVersion((v) => v + 1);
+        };
+        fallback.onerror = () => {
+          imageCacheRef.current[url] = "error";
+          setImageVersion((v) => v + 1);
+        };
+        fallback.src = url;
       };
       img.src = url;
     });
-  }, [config.customBgUrl, config.customLogoUrl]);
+  }, [config.customBgUrl, config.customLogoUrl, config.customAvatarUrl]);
 
   useEffect(() => {
     if (onExportRef) {
@@ -648,9 +735,13 @@ export default function BannerCanvas({ config, className = "", onExportRef }: Ba
   }, [config, imageVersion]);
 
   return (
-    <div className={`relative ${className}`} id="canvas-container">
+    <div className={`relative ${className}`} id={embedded ? undefined : "canvas-container"}>
       {/* Container wrapper that maintains the exact 4:1 LinkedIn Aspect Ratio */}
-      <div className="w-full aspect-[4/1] bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-slate-800">
+      <div
+        className={`w-full aspect-[4/1] bg-slate-950 overflow-hidden ${
+          embedded ? "" : "rounded-xl shadow-2xl border border-slate-800"
+        }`}
+      >
         <canvas
           ref={canvasRef}
           width={WIDTH}

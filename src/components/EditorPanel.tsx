@@ -114,7 +114,7 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
           }`}
         >
           <User className="w-3.5 h-3.5" />
-          <span>Identity</span>
+          <span className="hidden md:inline">Identity</span>
         </button>
         <button
           onClick={() => setActiveTab("style")}
@@ -125,7 +125,7 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
           }`}
         >
           <Palette className="w-3.5 h-3.5" />
-          <span>Theme & Style</span>
+          <span className="hidden md:inline">Theme & Style</span>
         </button>
         <button
           onClick={() => setActiveTab("skills")}
@@ -136,7 +136,7 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
           }`}
         >
           <BadgePlus className="w-3.5 h-3.5" />
-          <span>Skills Pills</span>
+          <span className="hidden md:inline">Skills Pills</span>
         </button>
         <button
           onClick={() => setActiveTab("highlights")}
@@ -147,7 +147,7 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
           }`}
         >
           <BarChart3 className="w-3.5 h-3.5" />
-          <span>Highlights</span>
+          <span className="hidden md:inline">Highlights</span>
         </button>
         <button
           onClick={() => setActiveTab("images")}
@@ -158,7 +158,7 @@ export default function EditorPanel({ config, onChangeConfig }: EditorPanelProps
           }`}
         >
           <ImageIcon className="w-3.5 h-3.5" />
-          <span>Images</span>
+          <span className="hidden md:inline">Images</span>
         </button>
       </div>
 
